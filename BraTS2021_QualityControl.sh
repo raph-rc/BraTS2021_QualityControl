@@ -11,20 +11,22 @@
 #The user can use key commands to iterate through samples, adding samples to either the "good" or the "bad" folders. The user\s choice is stored in the CSV file.
 #The user can go back to the previous selection using key command if an error was made.
 
-#TODO: Only have one window open at a time - done
-#TODO: Get slices to always show tumour - done
-#TODO: Save the points when you generate for the first time so it becomes a lot faster as you go (hopefully) - done
-#TODO: Add the 'good' and "bad" keyboard commands and make sure you can undo, iterate through subsets, etc.
-#TODO: Toggle the crosshairs - works a little slow
-#TODO: Check file type (could be .mnc)
-#TODO: Slow! Make faster = ~3 seconds per rendering
-#TODO: Maybe add labels to the grid
-#TODO: Verify order of labels
-#TODO: Stop FLAIR with overlay from getting so dark - trade off between clarity of label 
+#Done:
+#: Only have one window open at a time - done
+#: Get slices to always show tumour - done
+#: Save the points when you generate for the first time so it becomes a lot faster as you go (hopefully) - done
+#: Add the 'good' and "bad" keyboard commands and make sure you can undo, iterate through subsets, etc.
+#: Toggle the crosshairs - works a little slow
+#: Check file type (could be .mnc)
+#: Slow! Make faster = ~3 seconds per rendering
+#: Maybe add labels to the grid
+#: Verify order of labels
+#: Stop FLAIR with overlay from getting so dark - trade off between clarity of label 
+#: Make sure it could work on OS or Windows - hasn't been tested but should run on Windows
+
+#TODO:
 
 #COULDDO: maybe make it go back to first index when iterating?
-
-#TODO: Make sure it could work on OS or Windows
 #TODO: Useage documentation / commenting / clean up 
 
 declare -a current_files
@@ -60,7 +62,7 @@ refresh_files() {
 }
 
 brats_dir=$1 
-CSV_TRACKING="trackChoices.csv"
+CSV_TRACKING="BraTS2021_Evaluation.csv"
 show_crosshairs=true
 
 if [ ! -f "$CSV_TRACKING" ]; then
@@ -83,9 +85,22 @@ refresh_files
 
 echo "Total files: $total"
 echo "First file: ${current_files[0]}"
-
-
 echo " $total "
+
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    OS="mac"
+    VIEWER_CLOSE='osascript -e "tell application \"Preview\" to close every window"'
+    VIEWER_OPEN="open"
+elif [[ "$OSTYPE" == "linux-gnu"* ]] || [[ -n "$WSL_DISTRO_NAME" ]]; then
+        OS="linux"
+        VIEWER_CLOSE=""  # No equivalent
+        VIEWER_OPEN="xdg-open"  # Or: explorer.exe for WSL
+else
+        OS="windows"
+        VIEWER_CLOSE=""
+        VIEWER_OPEN="cmd.exe /c start"
+fi
 
 # Undo tracking
 last_file=""
@@ -138,9 +153,14 @@ prepare_subject_images() {
     local fname
     fname=$(basename "$subdir")
 
-    echo "fname top : $fname"
     # persistent tmp dir (RAM-based is fastest)
-    tmpdir="/tmp/minc_fast_${fname}"
+    #tmpdir="/tmp/minc_fast_${fname}"
+    # Fix temp directory
+    if [[ -n "$WSL_DISTRO_NAME" ]]; then
+        tmpdir="/tmp/minc_fast_${fname}"
+    else
+        tmpdir="${TMPDIR:-/tmp}/minc_fast_${fname}"
+    fi
     mkdir -p "$tmpdir"
 
     local t1base=${subdir}/${fname}_t1
@@ -192,10 +212,7 @@ update_csv_value() {
     local id="$2"
     local col="$3"
     local val="$4"
-    local tmpfile
-
-    echo "colNum $col "
-    
+    local tmpfile    
     # Clean the value:
     # 1. Remove leading/trailing whitespace from each line
     # 2. Replace commas with colons (302,190 -> 302:190)
@@ -232,34 +249,6 @@ update_csv_value() {
     ' "$file" > "$tmpfile" && mv "$tmpfile" "$file"
 }
 
-
-
-# draw_crosshairs() {
-#     local input_img="$1"
-#     local output_img="$2"
-
-#     # Skip drawing if crosshairs are disabled
-#     if [[ "$show_crosshairs" != true ]]; then
-#         return
-#     fi
-    
-#     cp "$input_img" "$output_img"
-    
-#     # echo "${points_array[@]}" | grep -v "^#" | while IFS=',' read -r x y; do
-#     #     if [ -n "$x" ] && [ -n "$y" ]; then
-
-#     for pt in "${points[@]}"; do
-#         [[ "$pt" =~ ^# ]] && continue
-#         IFS=',' read -r x y <<< "$pt"
-#         if [ -n "$x" ] && [ -n "$y" ]; then
-#             convert "$output_img" \
-#                 -stroke "$color" -strokewidth "$line_width" -fill none \
-#                 -draw "line $((x - crosshair_size)),$y $((x + crosshair_size)),$y" \
-#                 -draw "line $x,$((y - crosshair_size)) $x,$((y + crosshair_size))" \
-#                 "$output_img"
-#         fi
-#     done
-# }
 
 draw_crosshairs() {
     local input_img="$1"
@@ -302,8 +291,10 @@ draw_crosshairs() {
 }
 
 show_image() {
-    osascript -e 'tell application "Preview" to close every window' 2>/dev/null
-    #clear
+    #osascript -e 'tell application "Preview" to close every window' 2>/dev/null
+    eval "$VIEWER_CLOSE" 2>/dev/null
+
+    clear
 
     echo "Filter: [$filter_mode] | Image $((current + 1)) of $total: ${current_files[$current]}"
     echo "← → navigate | g=label as 'good' | b=label as 'bad' | u=undo | m= toggle crosshair visibility | 1=iterate all (default) | 2= iterate good | 3=iterate bad | 4=iterate unspecified | q=quit"
@@ -409,7 +400,7 @@ show_image() {
         mincpik --clobber --slice "$slice" "$tmpflair" "$temp_flair" 2>/dev/null
         
         #composite -blend 45 "$temp_label" "$temp_flair" "$temp_overlay" 2>/dev/null
-        composite "$temp_label" "$temp_flair" -compose screen -dissolve 30 "$temp_overlay" 2>/dev/null
+        composite "$temp_label" "$temp_flair" -compose screen -blend 45 "$temp_overlay" 2>/dev/null
        
 
         if [[ "$show_crosshairs" == true ]]; then
@@ -460,14 +451,6 @@ show_image() {
 
     tmpimg="$tmpdir/"$fname"_final_montage.png"
     
-    # Single montage operation
-    # montage "${temp_images[@]}" \
-    #     -tile 5x3 -geometry +2+2 \
-    #     -gravity Center \
-    #     -font Courier -pointsize 20 \
-    #     -title $'\nT1             T1CE                T2                FLAIR              FLAIR+Label' \
-    #     "$tmpimg" 2>/dev/null
-    
 
     montage "${temp_images[@]}"  -tile 5x3 -geometry +2+2 "$tmpimg" 2>/dev/null
     
@@ -509,140 +492,6 @@ show_image() {
     rm -f "$tmpflair" "$tmpt1" "$tmpt1ce" "$tmpt2" "$tmplabel"
 }
 
-
-# show_image() {
-#     osascript -e 'tell application "Preview" to close every window' 2>/dev/null
-
-#     clear
-
-#     echo "Filter: [$filter_mode] | Image $((current + 1)) of $total: ${current_files[$current]}"
-#     echo "← → navigate | g=label as 'good' | b=label as 'bad' | u=undo | m= toggle crosshair visibility | 1=iterate all (default) | 2= iterate good | 3=iterate bad | 4=iterate unspecified | q=quit"
-    
-#     #Parameters
-#     contrast_names=("T1" "T1CE" "T2" "FLAIR" "FLAIR+Label")
-#     crosshair_size=8  # Length of each arm
-#     line_width=1.5
-#     color="red"
-
-
-#     subdir="$brats_dir/${current_files[$current]}"
-#     # Call the setup function
-#     prepare_subject_images "$subdir"
-
-#     fname=$(basename "$subdir")
-
-
-#     # Get voxel coordinates of label
-#     read z_vox y_vox x_vox _ _ _ <<< "$(mincstats -quiet -CoM "$tmplabel")"
-#     slice_index=$(printf "%.0f" "$z_vox")   # round to nearest integer
-#     read max_z <<< "$(mincinfo $tmpflair -dimlength zspace)"
-
-#     slice_1=$(( ($slice_index-15) > 0 ? ( $slice_index-15 ) : 0 ))
-#     slice_3=$(( ($slice_index+15) < $max_z ? ( $slice_index+15 ) : $max_z ))
-#     slice_indices=("$slice_1" "$slice_index" "$slice_3")
-
-#     contrasts=("$tmpt1" "$tmpt1ce" "$tmpt2" "$tmpflair")
-#     temp_images=()
-
-
-
-#     for i in "${!slice_indices[@]}"; do
-#         slice="${slice_indices[$i]}"
-        
-#         #temp_label=$(mktemp -t label).png
-#         temp_label="$tmpdir/label_${slice}.png"
-
-#         mincpik --clobber --lookup "-hotmetal" --slice "$slice" "$tmplabel" "$temp_label"
-#         colNum=$((i + 3))
-        
-#         val=$(get_csv_value "$CSV_TRACKING" "$fname" "$colNum")
-
-
-#         if [[ -z "$val" ]]; then
-#             echo "[$fname] col $colNum empty — computing points..."
-#             points=$(python3 find_boundaries.py "$temp_label" 3)
-#             update_csv_value "$CSV_TRACKING" "$fname" "$colNum" "$points"
-#         else
-#             points="$val"
-#         fi
-
-
-#         IFS=';' read -ra points_array <<< "$(echo "$points" | tr ':' ',' )"
-
-        
-#         # Process each contrast image
-#         for contrast_file in "${contrasts[@]}"; do
-#             #temp_file=$(mktemp -t slice).png
-#             #temp_crosshair=$(mktemp -t crosshair).png
-#             temp_file="$tmpdir/$(basename "$contrast_file" .mnc)_${slice}.png"
-#             temp_crosshair="$tmpdir/$(basename "$contrast_file" .mnc)_crosshair.png"
-
-#             mincpik --clobber --slice "$slice" "$contrast_file" "$temp_file"
-           
-
-#             if [[ "$show_crosshairs" == true ]]; then
-#                 draw_crosshairs "$temp_file" "$temp_crosshair"
-#                 temp_images+=("$temp_crosshair")
-#                 rm "$temp_file"
-#             else
-#                 temp_images+=("$temp_file")
-#             fi
-#         done
-        
-        
-#         # 5th column: FLAIR with label overlay
-#         temp_flair=$(mktemp -t flair).png
-
-#         mincpik --clobber --slice "$slice" "$tmpflair" "$temp_flair"
-#         temp_overlay="$tmpdir/overlay_${slice}.png"
-
-#         #temp_overlay=$(mktemp -t overlay).png
-#         composite -dissolve 50 "$temp_label" "$temp_flair" "$temp_overlay" #IJZF
-        
-#         temp_overlay_crosshair=$(mktemp -t overlay_crosshair).png
-
-#         if [[ "$show_crosshairs" == true ]]; then
-#                 draw_crosshairs "$temp_overlay" "$temp_overlay_crosshair"
-#                 temp_images+=("$temp_overlay_crosshair")
-#                 rm "$temp_overlay"
-            
-#         else
-#                 temp_images+=("$temp_overlay")
-#         fi
-        
-#         # Cleanup
-#         rm "$temp_flair" "$temp_label" 
-#     done
-    
-
-#     tmpimg=$(mktemp -t mincpik).png
-
-#     # Combine into 3x4 grid (3 rows, 4 columns)
-#     montage "${temp_images[@]}" \
-#         -tile 5x3 -geometry +2+2 \
-#         -gravity Center \
-#         -font Courier -pointsize 20 \
-#         -title $'\nT1             T1CE                T2                FLAIR              FLAIR+Label' \
-#         "$tmpimg"
-    
-  
-#     # montage "${temp_images[@]}" -tile 5x3 -geometry +2+2 -title "T1     T1CE     T2     FLAIR     FLAIR+Label" \
-#     # -gravity Center labeled.png "$tmpimg" 
-
-#     # row_height=150
-    
-#     convert "$tmpimg" -gravity West -splice 100x0 \
-#         -font Courier -pointsize 20 -fill black \
-#         -annotate +10+$((row_height*0 + row_height/2 - 300)) "Slice $slice_1" \
-#         -annotate +10+$((row_height*1 + row_height/2)) "Slice $slice_index" \
-#         -annotate +10+$((-row_height*2 + row_height/2 + 100)) "Slice $slice_3" \
-#         "$tmpimg"
-
-#     open "$tmpimg"
-
-#     rm "$tmpflair" "$tmpt1" "$tmpt1ce" "$tmpt2" "$tmplabel"
-
-# }
 
 # Get current status of a file
 get_status() {
@@ -761,179 +610,9 @@ while true; do
 
     elif [[ $input == 'q' ]]; then
         # kill $display_pid 2>/dev/null
-        osascript -e 'tell application "Preview" to close every window' 2>/dev/null
+        #osascript -e 'tell application "Preview" to close every window' 2>/dev/null
+        eval "$VIEWER_CLOSE" 2>/dev/null
 
         break
     fi
 done
-
-
-# #All the labels:
-# # contrasts=("$tmpt1" "$tmpt1ce" "$tmpt2" "$tmpflair")
-# # contrast_names=("T1" "T1CE" "T2" "FLAIR")
-# # temp_images=()
-# # for slice in "${slice_indices[@]}"; do
-# #     # First row: original images
-# #     for contrast_file in "${contrasts[@]}"; do
-# #         temp_file=$(mktemp -t slice).png
-# #         mincpik --clobber --slice $slice "$contrast_file" "$temp_file"
-# #         temp_images+=("$temp_file")
-# #     done
-    
-# #     # Second row: same images with segmentation overlay
-# #     for contrast_file in "${contrasts[@]}"; do
-# #         temp_file=$(mktemp -t slice_overlay).png
-# #         # Use mincpik with both the contrast and label as overlay
-# #         mincpik --clobber --slice $slice "$contrast_file" "$temp_file"
-        
-# #         # Generate label slice
-# #         temp_label=$(mktemp -t label).png
-# #         mincpik --clobber --lookup "-hotmetal" --slice $slice "$tmplabel" "$temp_label"
-        
-# #         # Overlay label on contrast image
-# #         temp_overlay=$(mktemp -t overlay).png
-# #         #convert "$temp_file" "$temp_label" -compose blend -define compose:args=50 -composite "$temp_overlay"
-# #         composite -dissolve 50 "$temp_label" "$temp_file" "$temp_overlay"
-
-# #         temp_images+=("$temp_overlay")
-# #         rm "$temp_file" "$temp_label"
-# #     done
-# # done
-
-# # tmpimg=$(mktemp -t mincpik).png
-
-# # # Combine into 6x4 grid (6 rows: 3 slices × 2 rows each, 4 columns for contrasts)
-# montage "${temp_images[@]}" -tile 4x6 -geometry +2+2 "$tmpimg"
-
-# Clean up temporary files
-
-
-
-
-#FLAIR only: dual slice images
-# temp_images=()
-# for slice in "${slice_indices[@]}"; do
-#     temp_file=$(mktemp -t slice).png
-#     mincpik --clobber --slice $slice "$tmpflair" "$temp_file"
-#     temp_images+=("$temp_file")
-# done
-
-# # Combine them into a single image (horizontal layout)
-# montage "${temp_images[@]}" -tile x1 -geometry +2+2 "$tmpimg"
-
-# # Clean up temporary files
-# rm "${temp_images[@]}"
-
-# open "$tmpimg"
-
-
-
-
-
-# Create base slice
-# mincpik --clobber --slice $slice_index "$tmpflair" "$tmpimg"
-
-# mincpik can apply lookup tables directly
-# mincpik --clobber --slice $slice_index \
-#     --lookup "-spectral" \
-#     "$tmplabel" "${tmpimg%.png}_label.png"
-
-# # Then composite with the base image
-# mincpik --clobber --slice $slice_index "$tmpflair" "$tmpimg"
-
-# # Use ImageMagick to overlay
-# composite -dissolve 50 "${tmpimg%.png}_label.png" "$tmpimg" "${tmpimg%.png}_overlay.png"
-# open "${tmpimg%.png}_overlay.png"
-
-
-
-#!/bin/bash
-# Draw crosshairs on segmentation overlay at significant boundary points
-
-
-# Generate base image and label overlay
-# mincpik --clobber --slice "$slice_index" "$tmpflair" "$tmpimg"
-# mincpik --clobber --slice "$slice_index" --lookup "-spectral" "$tmplabel" "${tmpimg%.png}_label.png"
-
-# Create composite overlay
-#composite -dissolve 50 "${tmpimg%.png}_label.png" "$tmpimg" "${tmpimg%.png}_overlay.png"
-
-# Find significant boundary points using Python script
-# Output format: x,y coordinates one per line
-# points=$(python3 find_boundaries.py "${tmpimg%.png}_label.png" 3)
-
-# # Parse points and draw crosshairs
-# output_img="${tmpimg%.png}_overlay_crosshairs.png"
-# cp "${tmpimg%.png}_overlay.png" "$output_img"
-
-# # Crosshair parameters
-# crosshair_size=3  # Length of each arm
-# line_width=0.5
-# color="red"
-
-
-# echo "$points" | grep -v "^#" | while IFS=',' read -r x y; do
-#     if [ -n "$x" ] && [ -n "$y" ]; then
-#         echo "Drawing crosshair at ($x, $y)"
-        
-#         # Draw crosshair using ImageMagick
-#         convert "$output_img" \
-#             -stroke "$color" -strokewidth "$line_width" -fill none \
-#             -draw "line $((x - crosshair_size)),$y $((x + crosshair_size)),$y" \
-#             -draw "line $x,$((y - crosshair_size)) $x,$((y + crosshair_size))" \
-#             -stroke black -strokewidth 1 \
-#             -stroke "$color" -strokewidth 1 -fill none \
-#             "$output_img"
-#     fi
-# done
-
-# echo "Saved crosshair overlay to: $output_img"
-# open "$output_img"
-        # if awk -F', *' -v file="$fname" -v col="$colNum" '
-        #     {
-        #         # Clean whitespace and carriage returns
-        #         gsub(/\r$/, "", $1)
-        #         gsub(/^ *| *$/, "", $1)
-        #     }
-        #     $1 == file {
-        #         found = 1
-        #         val = (NF >= col ? $col : "")
-        #         gsub(/\r$/, "", val)
-        #         gsub(/^ *| *$/, "", val)
-        #         #printf("[DEBUG] MATCH file=%s, col[%d]=[%s]\n", file, col, val) > "/dev/stderr"
-        #         if (val == "" || val == "\"\"" || val == " ") exit 0
-        #         else exit 1
-        #     }
-        #     END {
-        #         if (!found) {
-        #             #print "[DEBUG] No match found for", file > "/dev/stderr"
-        #             exit 2
-        #         }
-        #     }
-        # ' "$CSV_TRACKING"; then
-            #echo "[$fname] column $colNum is EMPTY"
-
-        #     echo "[$fname] has empty entry in column $colNum — computing new points..."
-     
-            
-        #     #determine crosshair points from the label for this slice
-            
-        #     # Get crosshair coordinates (reuse for all images in this row)
-        #     points=$(python3 find_boundaries.py "$temp_label" 3)
-            
-        #     cp 
-            
-        #     #echo " Points: $points "
-        #     points_array=$(echo "$points" | tr ',' ':' | tr '\n' ';' | sed 's/;$//')
-
-        #     awk -v file="$fname" -v val="$points_array" -v col="$colNum" -F',' 'BEGIN{OFS=","}
-        #         NR==1 {print $0; next}
-        #         $1==file {$col=val}  # No quotes needed now
-        #         {print}' "$CSV_TRACKING" > temp.csv && mv temp.csv "$CSV_TRACKING"
-
-        # fi
-        #echo "[$fname] already has data — extracting from CSV..."
-
-        # points_str=$(awk -F',' -v file="$fname" -v col="$colNum" '$1==file {print $col}' "$CSV_TRACKING" | tr ':' ",")
-
-        # IFS=';' read -ra points_array <<< "$points_str"
