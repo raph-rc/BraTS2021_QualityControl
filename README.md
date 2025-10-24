@@ -5,8 +5,8 @@
 
 This tool helps you quickly review and label brain MRI images from the BraTS dataset. It displays multiple MRI contrasts (T1, T1CE, T2, FLAIR) with tumor segmentation overlays, allowing you to mark images as "good", "bad", or leave them "unspecified".
 
-For step-by-step instructions on how to install and use the tool, see: [Running the Tool](#running-the-tool)
-For in-depth instructions on keyboard navigation, see: [Keyboard Controls](#keyboard-controls)
+- For step-by-step instructions on how to install and use the tool, see: [Running the Tool](#running-the-tool)
+- For in-depth instructions on keyboard navigation, see: [Keyboard Controls](#keyboard-controls)
 
 ---
 
@@ -131,31 +131,31 @@ Follow the workflow below for labelling/ navigation instructions:
 
 1) Review the first image:
 
-Check all contrasts for artifacts, alignment, quality
-Look at the segmentation overlay (rightmost column)
-
-To toggle the crosshairs on/off, press m
+ Check all contrasts for artifacts, alignment, quality
+ Look at the segmentation overlay (rightmost column)
+ 
+ To toggle the crosshairs on/off, press m (See all navigation instructions: [Keyboard Controls](#keyboard-controls))
 
 2) Label the image:
 
-Press g if good quality → advances to next image
-Press b if bad quality → advances to next image
-Press → to skip without labeling
+ Press g if good quality → advances to next image
+ Press b if bad quality → advances to next image
+ Press → to skip without labeling
 
 
-4) Use filters to review specific categories:
-*These modes can be switched between without exiting the program
-Press 1 to see all images ("good', "bad", "unlabelled") [default]
-Press 4 to see only unlabelled images
-Press 3 to verify all "bad" images
-Press 2 to verify all "good" images
+3) Use filters to review specific categories:
+ *These modes can be switched between without exiting the program
+ Press 1 to see all images ("good', "bad", "unlabelled") [default]
+ Press 4 to see only unlabelled images
+ Press 3 to verify all "bad" images
+ Press 2 to verify all "good" images
 
 
-5) Made a mistake?
-Press u to undo your last label and return to the previous image for re-evaluation
+4) Made a mistake?
+ Press u to undo your last label and return to the previous image for re-evaluation
 
 
-6) Finish:
-Press q to quit
+5) Finish:
+ Press q to quit
 
 Your labels are saved in order in BraTS2021_Evaluation.csv
