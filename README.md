@@ -5,6 +5,11 @@
 
 This tool helps you quickly review and label brain MRI images from the BraTS dataset. It displays multiple MRI contrasts (T1, T1CE, T2, FLAIR) with tumor segmentation overlays, allowing you to mark images as "good", "bad", or leave them "unspecified".
 
+For step-by-step instructions on how to install and use the tool, see: [Running the Tool](#running-the-tool)
+For in-depth instructions on keyboard navigation, see: [Keyboard Controls](#keyboard-controls)
+
+---
+
 ### Required Software
 - Bash shell (Mac/Linux native, or WSL on Windows)
 - MINC toolkit (mincpik, mincstats, mincinfo, nii2mnc)
@@ -82,23 +87,56 @@ q - Quit the viewer
 
 ## Running the Tool
 
+1) #### Install Environment:
 
+If using conda, install the environment 'minc' from the environment.yml.
 
-## Workflow Example
-
-1) Start the viewer
+ Run:
 ```bash
+conda env create -f environment.yml
+conda activate minc
+```
+
+Else, install the packages specified in [Required Software](#required-software)
+
+2) Ensure BraTS2021 Dataset Format
+
+By convention, the BraTS2021 folder specified should contain 1251 subfolders following the "BraTS-GLI-00000-000" naming convention. Each subfolder should contain five files (t1, t1ce, t2, flair, seg), of file type either '.nii.gz' or '.mnc'. The quality control script runs with either file type.
+
+```
+/path/to/brats_data/
+├── BraTS-GLI-00000-000/
+│   ├── BraTS-GLI-00000-000_t1.nii.gz (or .mnc)
+│   ├── BraTS-GLI-00000-000_t1ce.nii.gz
+│   ├── BraTS-GLI-00000-000_t2.nii.gz
+│   ├── BraTS-GLI-00000-000_flair.nii.gz
+│   └── BraTS-GLI-00000-000_seg.nii.gz
+├── BraTS-GLI-00001-000/
+│   └── ...
+```
+
+3)  Navigate to the working directory and start the viewer
+
+
+```bash
+cd BraTS_Evaluation
 ./BraTS2021_QualityControl.sh /path/to/brats_data
 ```
 
+This will create the CSV file 'BraTSEvaluation.csv' which will store QC evaluations and prompt the first image to appear. 
 
-2) Review the first image:
+Follow the workflow below for labelling/ navigation instructions:
+
+### Typical Workflow 
+
+1) Review the first image:
 
 Check all contrasts for artifacts, alignment, quality
 Look at the segmentation overlay (rightmost column)
 
+To toggle the crosshairs on/off, press m
 
-3) Label the image:
+2) Label the image:
 
 Press g if good quality → advances to next image
 Press b if bad quality → advances to next image
@@ -114,7 +152,7 @@ Press 2 to verify all "good" images
 
 
 5) Made a mistake?
-Press u to undo your last label and return to the previous image
+Press u to undo your last label and return to the previous image for re-evaluation
 
 
 6) Finish:
