@@ -67,6 +67,22 @@ Edit these parameters in the `show_image()` function:
 
 ---
 
+## Labelling Convention for BraTS2021
+
+BraTS datasets have three non-zero labels:
+- Edema
+- Enhancing tumour
+- Non-enhancing tumour and necrotic tissue
+
+By default, this script uses the *hotmetal* colour map where:
+- Orange = edema
+- White = Enhancing tumour
+- Red = Non-enhancing tumour AND necrotic tumour tissue
+
+![Example Image](ExampleImages/labelColourExample.png)
+
+---
+
 ## Keyboard Controls
 
 ### Navigation
@@ -150,6 +166,13 @@ This will create the CSV file `BraTSEvaluation.csv` which will store QC evaluati
 - Look at the segmentation overlay (rightmost column)
 - To toggle crosshairs on/off, press `m` (see [Keyboard Controls](#keyboard-controls))
 
+> **Labelling:** 
+> Orange = edema
+> White = Enhancing tumour
+> Red = Non-enhancing tumour AND necrotic tumour tissue
+
+![Label Colour Image](ExampleImages/labelColourExample.png)
+
 ### 2. Label the Image
 
 - Press `g` if good quality → advances to next image
@@ -179,6 +202,6 @@ Your labels are saved in `BraTS2021_Evaluation.csv`.
 
 ---
 
-## Summary
+## More Support
 
-This tool provides an efficient way to perform quality control on the BraTS2021 dataset. Use keyboard shortcuts to quickly navigate and label images, and leverage filtering modes to focus on specific categories or resume previous work sessions.
+If there any issues, contact isabel.frolick@mail.mcgill.ca

@@ -83,9 +83,9 @@ current_files=()
 
 refresh_files
 
-echo "Total files: $total"
-echo "First file: ${current_files[0]}"
-echo " $total "
+#echo "Total files: $total"
+#echo "First file: ${current_files[0]}"
+#echo " $total "
 
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -295,9 +295,26 @@ show_image() {
     eval "$VIEWER_CLOSE" 2>/dev/null
 
     clear
-
+    echo "═══════════════════════════════════════════════════════════════════════════════"
     echo "Filter: [$filter_mode] | Image $((current + 1)) of $total: ${current_files[$current]}"
-    echo "← → navigate | g=label as 'good' | b=label as 'bad' | u=undo | m= toggle crosshair visibility | 1=iterate all (default) | 2= iterate good | 3=iterate bad | 4=iterate unspecified | q=quit"
+    echo "═══════════════════════════════════════════════════════════════════════════════"
+    echo ""
+    echo "SEGMENTATION LABELS:"
+    echo "  Orange = Edema | White = Enhancing Tumour | Red = Non-enhancing Tumour & Necrosis"
+    echo ""
+    echo "CONTROLS:"
+    echo "  Navigation:  ← → (arrow keys) | u (undo)"
+    echo "  Labelling:    g (good) | b (bad)"
+    echo "  Display:     m (toggle crosshair)"
+    echo "  Filters:     1 (all) [default on start-up]| 2 (good only) | 3 (bad only) | 4 (unlabeled only)"
+    echo "  Exit:        q (quit)"
+    echo ""
+    echo "IMPORTANT: If continuing labelling from a previous session, press '4' to skip already labeled images"
+    echo "═══════════════════════════════════════════════════════════════════════════════"
+    # echo "Filter: [$filter_mode] | Image $((current + 1)) of $total: ${current_files[$current]}"\n
+    # echo "IMPORTANT: If continuing from a previous labelling session, press '4' (iterate only unlabelled images) to avoid relabelling previous work"
+    # echo "Orange = edema ; White = enhancing tumour ; Red = Non-enhancing tumour AND necrosis"\n
+    # echo "← → navigate | g=label as 'good' | b=label as 'bad' | u=undo | m= toggle crosshair visibility | 1=iterate all (default) | 2= iterate good | 3=iterate bad | 4=iterate unspecified | q=quit"
     
     # Parameters
     contrast_names=("T1" "T1CE" "T2" "FLAIR" "FLAIR+Label")
@@ -343,7 +360,7 @@ show_image() {
         val=$(get_csv_value "$CSV_TRACKING" "$fname" "$colNum")
         
         if [[ -z "$val" ]]; then
-            echo "[$fname] col $colNum empty — computing points..."
+            #echo "[$fname] col $colNum empty — computing points..."
             temp_label="$tmpdir/label_${slice}.png"
             mincpik --clobber --lookup "-hotmetal" --slice "$slice" "$tmplabel" "$temp_label" 2>/dev/null
             
