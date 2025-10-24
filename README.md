@@ -15,14 +15,15 @@ This tool helps you quickly review and label brain MRI images from the BraTS dat
 
 #### Full Conda Environment
 
-'''bash
+```bash
 conda env create -f environment.yml
 conda activate minc
-'''
+```
 
 ### Data Structure
 Your BraTS data should be organized like this:
 
+```
 /path/to/brats_data/
 ├── BraTS-GLI-00000-000/
 │   ├── BraTS-GLI-00000-000_t1.nii.gz (or .mnc)
@@ -32,12 +33,12 @@ Your BraTS data should be organized like this:
 │   └── BraTS-GLI-00000-000_seg.nii.gz
 ├── BraTS-GLI-00001-000/
 │   └── ...
-
+```
 
 ### Basic Usage
-'''bash
+```bash
 ./BraTS2021_QualityControl.sh /path/to/brats_data
-'''
+```
 
 ### Customization
 
@@ -47,7 +48,7 @@ Edit these parameters in the show_image() function:
 - color="red"             # Crosshair color
 - slice_offset=15         # Distance between displayed slices
 
---- 
+---
 
 ### Keyboard Controls
 
@@ -77,19 +78,19 @@ m - Toggle crosshair marker visibility on/off
 
 q - Quit the viewer
 
-___
+---
 
 ## Running the Tool
 
-# 1) 
+
 
 ## Workflow Example
 
 1) Start the viewer
-'''bash
+```bash
 ./BraTS2021_QualityControl.sh /path/to/brats_data
+```
 
-'''
 
 2) Review the first image:
 
