@@ -87,7 +87,7 @@ q - Quit the viewer
 
 ## Running the Tool
 
-1) #### Install Environment:
+### Step 1: Install Environment
 
 If using conda, install the environment 'minc' from the environment.yml.
 
@@ -99,7 +99,7 @@ conda activate minc
 
 Else, install the packages specified in [Required Software](#required-software)
 
-2) Ensure BraTS2021 Dataset Format
+### Step 2: Ensure BraTS2021 Dataset Format
 
 By convention, the BraTS2021 folder specified should contain 1251 subfolders following the "BraTS-GLI-00000-000" naming convention. Each subfolder should contain five files (t1, t1ce, t2, flair, seg), of file type either '.nii.gz' or '.mnc'. The quality control script runs with either file type.
 
@@ -115,8 +115,7 @@ By convention, the BraTS2021 folder specified should contain 1251 subfolders fol
 │   └── ...
 ```
 
-3)  Navigate to the working directory and start the viewer
-
+### Step 3:  Navigate to the working directory and start the viewer
 
 ```bash
 cd BraTS_Evaluation
@@ -129,33 +128,33 @@ Follow the workflow below for labelling/ navigation instructions:
 
 ### Typical Workflow 
 
-1) Review the first image:
+### Typical Workflow
 
- Check all contrasts for artifacts, alignment, quality
- Look at the segmentation overlay (rightmost column)
- 
- To toggle the crosshairs on/off, press m (See all navigation instructions: [Keyboard Controls](#keyboard-controls))
+1. **Review the first image**
+   - Check all contrasts for artifacts, alignment, quality
+   - Look at the segmentation overlay (rightmost column)
+   - To toggle crosshairs on/off, press `m`
 
-2) Label the image:
-
- Press g if good quality → advances to next image
- Press b if bad quality → advances to next image
- Press → to skip without labeling
-
-
-3) Use filters to review specific categories:
- *These modes can be switched between without exiting the program
- Press 1 to see all images ("good', "bad", "unlabelled") [default]
- Press 4 to see only unlabelled images
- Press 3 to verify all "bad" images
- Press 2 to verify all "good" images
+2. **Label the image**
+   - Press `g` if good quality → advances to next image
+   - Press `b` if bad quality → advances to next image
+   - Press `→` to skip without labeling
 
 
-4) Made a mistake?
- Press u to undo your last label and return to the previous image for re-evaluation
+3. **Use filters to review specific categories**
+> **Note:** These modes can be switched between without exiting the program
+> **If continuing from a previous labelling session, Press 4 to avoid relabelling previous work**
+  - Press 1 to see all images ("good', "bad", "unlabelled") [default]
+  - Press 2 to verify all "good" images
+  - Press 3 to verify all "bad" images
+  - Press 4 to see only unlabelled images
 
 
-5) Finish:
- Press q to quit
+4. ** Made a mistake?**
+Press u to undo your last label and return to the previous image for re-evaluation
+
+
+5. **Finish**
+Press q to quit
 
 Your labels are saved in order in BraTS2021_Evaluation.csv
