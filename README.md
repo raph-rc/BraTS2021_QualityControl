@@ -19,7 +19,7 @@ This tool helps you quickly review and label brain MRI images from the BraTS dat
 '''bash
 conda env create -f environment.yml
 conda activate minc
-'''
+
 
 ## Data Structure
 Your BraTS data should be organized like this:
