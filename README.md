@@ -5,23 +5,22 @@
 
 This tool helps you quickly review and label brain MRI images from the BraTS dataset. It displays multiple MRI contrasts (T1, T1CE, T2, FLAIR) with tumor segmentation overlays, allowing you to mark images as "good", "bad", or leave them "unspecified".
 
-## Required Software
+### Required Software
 - Bash shell (Mac/Linux native, or WSL on Windows)
 - MINC toolkit (mincpik, mincstats, mincinfo, nii2mnc)
 - ImageMagick (convert, montage, composite)
 - GNU Parallel (optional but recommended for speed)
 
+### Installation
 
-## Installation
+#### Full Conda Environment
 
-### Full Conda Environment
-
-```bash
+'''bash
 conda env create -f environment.yml
 conda activate minc
-```
+'''
 
-## Data Structure
+### Data Structure
 Your BraTS data should be organized like this:
 
 /path/to/brats_data/
@@ -34,12 +33,11 @@ Your BraTS data should be organized like this:
 ├── BraTS-GLI-00001-000/
 │   └── ...
 
-## Running the Tool
 
 ### Basic Usage
-```bash
+'''bash
 ./BraTS2021_QualityControl.sh /path/to/brats_data
-```
+'''
 
 ### Customization
 
@@ -49,7 +47,9 @@ Edit these parameters in the show_image() function:
 - color="red"             # Crosshair color
 - slice_offset=15         # Distance between displayed slices
 
-## Keyboard Controls
+--- 
+
+### Keyboard Controls
 
 #### Navigation (does not label images as "good" or "bad")
 
@@ -77,14 +77,19 @@ m - Toggle crosshair marker visibility on/off
 
 q - Quit the viewer
 
+___
+
+## Running the Tool
+
+# 1) 
 
 ## Workflow Example
 
-1) Start the viewer:
-```bash
+1) Start the viewer
+'''bash
 ./BraTS2021_QualityControl.sh /path/to/brats_data
-```
 
+'''
 
 2) Review the first image:
 
