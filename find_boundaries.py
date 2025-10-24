@@ -37,7 +37,7 @@ def find_boundary_points(label_image, num_points=3):
     boundary_coords = np.argwhere(boundary_map)
     
     if len(boundary_coords) == 0:
-        print("No boundaries found!", file=sys.stderr)
+        #print("No boundaries found!", file=sys.stderr)
         return []
     
     # Select well-distributed points using k-means-like approach
