@@ -16,10 +16,10 @@ This tool helps you quickly review and label brain MRI images from the BraTS dat
 
 ### Full Conda Environment
 
-'''bash
+```bash
 conda env create -f environment.yml
 conda activate minc
-
+```
 
 ## Data Structure
 Your BraTS data should be organized like this:
@@ -37,9 +37,9 @@ Your BraTS data should be organized like this:
 ## Running the Tool
 
 ### Basic Usage
-'''bash
+```bash
 ./BraTS2021_QualityControl.sh /path/to/brats_data
-'''
+```
 
 ### Customization
 
@@ -80,11 +80,11 @@ q - Quit the viewer
 
 ## Workflow Example
 
-1) Start the viewer
-'''bash
+1) Start the viewer:
+```bash
 ./BraTS2021_QualityControl.sh /path/to/brats_data
+```
 
-'''
 
 2) Review the first image:
 
