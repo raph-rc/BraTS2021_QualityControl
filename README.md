@@ -19,102 +19,6 @@ This tool helps you quickly review and label brain MRI images from the BraTS dat
 
 ---
 
-## Installation
-
-### Full Conda Environment
-
-```bash
-conda env create -f environment.yml
-conda activate minc
-```
-
----
-
-## Data Structure
-
-Your BraTS data should be organized like this:
-
-```
-/path/to/brats_data/
-├── BraTS-GLI-00000-000/
-│   ├── BraTS-GLI-00000-000_t1.nii.gz (or .mnc)
-│   ├── BraTS-GLI-00000-000_t1ce.nii.gz
-│   ├── BraTS-GLI-00000-000_t2.nii.gz
-│   ├── BraTS-GLI-00000-000_flair.nii.gz
-│   └── BraTS-GLI-00000-000_seg.nii.gz
-├── BraTS-GLI-00001-000/
-│   └── ...
-```
-
----
-
-## Basic Usage
-
-```bash
-./BraTS2021_QualityControl.sh /path/to/brats_data
-```
-
----
-
-## Customization
-
-Edit these parameters in the `show_image()` function:
-
-- `crosshair_size=6` - Crosshair arm length (pixels)
-- `line_width=1.5` - Crosshair line thickness
-- `color="red"` - Crosshair color
-- `slice_offset=15` - Distance between displayed slices
-
----
-
-## Labelling Convention for BraTS2021
-
-BraTS datasets have three non-zero labels:
-- Edema
-- Enhancing tumour
-- Non-enhancing tumour and necrotic tissue
-
-By default, this script uses the *hotmetal* colour map where:
-- Orange = edema
-- White = Enhancing tumour
-- Red = Non-enhancing tumour AND necrotic tumour tissue
-
-![Example Image](ExampleImages/labelColourExample.png)
-
----
-
-## Keyboard Controls
-
-### Navigation
-*Does not label images as "good" or "bad"*
-
-- `→` (Right Arrow) - Next image
-- `←` (Left Arrow) - Previous image
-
-### Labeling
-
-- `g` - Mark current image as "good" and advance
-- `b` - Mark current image as "bad" and advance
-- `u` - Undo last labeling action
-
-### Display Options
-
-- `m` - Toggle crosshair marker visibility on/off
--`p` - Toggle showing multiple images at once (by default, only show one)
-
-### Filtering
-
-- `1` - Show all images (default)
-- `2` - Show only "good" images
-- `3` - Show only "bad" images
-- `4` - Show only "unspecified" images
-
-### Exit
-
-- `q` - Quit the viewer
-
----
-
 ## Running the Tool
 
 ### Step 1: Install Environment
@@ -192,8 +96,67 @@ cd BraTS_Evaluation
 ```
 
 Note: Other versions have not been tested as thoroughly as BraTS2021 and may not work as expected (due to different file structures). Please [Contact](#contact) me for more support.
+
 ---
 
+## Customization
+
+Edit these parameters in the `show_image()` function:
+
+- `crosshair_size=6` - Crosshair arm length (pixels)
+- `line_width=1.5` - Crosshair line thickness
+- `color="red"` - Crosshair color
+- `slice_offset=15` - Distance between displayed slices
+
+---
+
+## Labelling Convention for BraTS2021
+
+BraTS datasets have three non-zero labels:
+- Edema
+- Enhancing tumour
+- Non-enhancing tumour and necrotic tissue
+
+By default, this script uses the *hotmetal* colour map where:
+- Orange = edema
+- White = Enhancing tumour
+- Red = Non-enhancing tumour AND necrotic tumour tissue
+
+![Example Image](ExampleImages/labelColourExample.png)
+
+---
+
+## Keyboard Controls
+
+### Navigation
+*Does not label images as "good" or "bad"*
+
+- `→` (Right Arrow) - Next image
+- `←` (Left Arrow) - Previous image
+
+### Labeling
+
+- `g` - Mark current image as "good" and advance
+- `b` - Mark current image as "bad" and advance
+- `u` - Undo last labeling action
+
+### Display Options
+
+- `m` - Toggle crosshair marker visibility on/off
+-`p` - Toggle showing multiple images at once (by default, only show one)
+
+### Filtering
+
+- `1` - Show all images (default)
+- `2` - Show only "good" images
+- `3` - Show only "bad" images
+- `4` - Show only "unspecified" images
+
+### Exit
+
+- `q` - Quit the viewer
+
+---
 
 ## Typical Workflow
 
