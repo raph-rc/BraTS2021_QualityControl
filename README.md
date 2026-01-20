@@ -1,4 +1,4 @@
-# BraTS2021 Image Quality Control Tool - Usage Guide
+# BraTS Image Quality Control Tool - Usage Guide
 
 ## Overview
 
