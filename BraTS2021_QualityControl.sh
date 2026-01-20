@@ -8,13 +8,10 @@
 
 #Each slice is displayed in each available contrast to the user (T1, T2, T1-gadolinium contrast enhanced, and FLAIR) using mincpik
 
-#The user can use key commands to iterate through samples, adding samples to either the "good" or the "bad" folders. The user\s choice is stored in the CSV file.
+#The user can use key commands to iterate through samples, adding samples to either the "good", the "bad", or the "okay" folders. The user\s choice is stored in the CSV file.
 #The user can go back to the previous selection using key command if an error was made.
 
 #Done:
-#: Only have one window open at a time - done
-#: Get slices to always show tumour - done
-#: Save the points when you generate for the first time so it becomes a lot faster as you go (hopefully) - done
 #: Add the 'good' and "bad" keyboard commands and make sure you can undo, iterate through subsets, etc.
 #: Toggle the crosshairs - works a little slow
 #: Check file type (could be .mnc)
@@ -23,16 +20,27 @@
 #: Verify order of labels
 #: Stop FLAIR with overlay from getting so dark - trade off between clarity of label 
 #: Make sure it could work on OS or Windows - hasn't been tested but should run on Windows
-
-#TODO:
+#: Useage documentation / commenting / clean up 
 
 #COULDDO: maybe make it go back to first index when iterating?
-#TODO: Useage documentation / commenting / clean up 
 
 declare -a current_files
 declare -i total
 declare -i current
 show_crosshairs=true
+MULTI_WINDOW_MODE=false
+
+#If not using BraTS2021, create new
+if [[ -n "$2" ]]; then
+    brats_dir="$2"
+    #brats_name="$(basename "${brats_dir%/}")"
+fi
+brats_name="$1"
+
+# create target dirs
+montage_dir="${brats_name}_Montage_Images"
+nocrosshairs_montage_dir="${brats_name}_Montage_Images-NoCrosshairs"
+mkdir -p "$montage_dir" "$nocrosshairs_montage_dir"
 
 refresh_files() {
     if [[ "$filter_mode" == "all" ]]; then
@@ -61,9 +69,10 @@ refresh_files() {
     [[ $current -lt 0 ]] && current=0
 }
 
-brats_dir=$1 
-CSV_TRACKING="BraTS2021_Evaluation.csv"
-show_crosshairs=true
+
+brats_dir="${2:-.}"
+CSV_TRACKING="${brats_name}_Evaluation.csv"
+#show_crosshairs=true
 
 if [ ! -f "$CSV_TRACKING" ]; then
     #mkdir -p "$CSV_TRACKING"
@@ -78,7 +87,7 @@ while IFS= read -r line; do
 done < <(tail -n +2 "$CSV_TRACKING" | cut -d',' -f1)
 
 current=0
-filter_mode="all" # "all", "good", "bad", "unspecified"
+filter_mode="all" # "all", "good", "bad", "okay", "unspecified"
 current_files=()
 
 refresh_files
@@ -249,6 +258,43 @@ update_csv_value() {
     ' "$file" > "$tmpfile" && mv "$tmpfile" "$file"
 }
 
+show_image() {
+    #eval "$VIEWER_CLOSE" 2>/dev/null
+
+    if [[ $MULTI_WINDOW_MODE == false ]]; then
+    # Close previous windows only in single-window mode
+        eval "$VIEWER_CLOSE" 2>/dev/null
+    fi
+
+    echo "═══════════════════════════════════════════════════════════════════════════════"
+    echo "Filter: [$filter_mode] | Image $((current + 1)) of $total: ${current_files[$current]}"
+    echo "═══════════════════════════════════════════════════════════════════════════════"
+    echo ""
+    echo "SEGMENTATION LABELS:"
+    echo "  Orange = Edema | White = Enhancing Tumour | Red = Non-enhancing Tumour & Necrosis"
+    echo ""
+    echo "CONTROLS:"
+    echo "  Navigation:  ← → (arrow keys) | u (undo)"
+    echo "  Labelling:    g (good) | b (bad) | o (okay)"
+    echo "  Display:     m (toggle crosshair) | p (show multiple images at once)"
+    echo "  Filters:     1 (all) [default on start-up]| 2 (good only) | 3 (bad only) | 4 (unlabeled only) | 5 (okay only)"
+    echo "  Exit:        q (quit)"
+    echo ""
+    echo "IMPORTANT: If continuing labelling from a previous session, press '4' to skip already labeled images"
+    echo "═══════════════════════════════════════════════════════════════════════════════"
+
+    echo " "$FINAL_MONTAGE_DIR""
+    local fname="${current_files[$current]}"
+    local montage_path="${FINAL_MONTAGE_DIR}/${fname}_finalmontage.png"
+
+    if [[ ! -f "$montage_path" ]]; then
+        echo "Montage not found for ${fname}. Run generation first."
+        return
+    fi
+
+    open "$montage_path" 2>/dev/null
+}
+
 
 draw_crosshairs() {
     local input_img="$1"
@@ -290,27 +336,39 @@ draw_crosshairs() {
         "$output_img"
 }
 
-show_image() {
-    #osascript -e 'tell application "Preview" to close every window' 2>/dev/null
-    eval "$VIEWER_CLOSE" 2>/dev/null
 
-    clear
-    echo "═══════════════════════════════════════════════════════════════════════════════"
-    echo "Filter: [$filter_mode] | Image $((current + 1)) of $total: ${current_files[$current]}"
-    echo "═══════════════════════════════════════════════════════════════════════════════"
-    echo ""
-    echo "SEGMENTATION LABELS:"
-    echo "  Orange = Edema | White = Enhancing Tumour | Red = Non-enhancing Tumour & Necrosis"
-    echo ""
-    echo "CONTROLS:"
-    echo "  Navigation:  ← → (arrow keys) | u (undo)"
-    echo "  Labelling:    g (good) | b (bad)"
-    echo "  Display:     m (toggle crosshair)"
-    echo "  Filters:     1 (all) [default on start-up]| 2 (good only) | 3 (bad only) | 4 (unlabeled only)"
-    echo "  Exit:        q (quit)"
-    echo ""
-    echo "IMPORTANT: If continuing labelling from a previous session, press '4' to skip already labeled images"
-    echo "═══════════════════════════════════════════════════════════════════════════════"
+generate_all_montages() {
+    echo "Generating all final montage images with crosshairs..."
+    #mkdir -p "$FINAL_MONTAGE_DIR"
+    local FINAL_MONTAGE_DIR="$1"
+    local show_crosshairs="$2"
+
+    for fname in "${files[@]}"; do
+        subdir="$brats_dir/$fname"
+        output_img="${FINAL_MONTAGE_DIR}/${fname}_finalmontage.png"
+
+        if [[ -f "$output_img" ]]; then
+            echo "Skipping $fname (already generated)"
+            continue
+        fi
+
+        #echo "Generating montage for $fname ..."
+        #prepare_subject_images "$subdir"
+
+        generate_single_montage "$fname" "$subdir" "$output_img" "$show_crosshairs"
+    done
+
+    echo " All montages generated in: $FINAL_MONTAGE_DIR"
+}
+
+
+generate_single_montage() {
+    #osascript -e 'tell application "Preview" to close every window' 2>/dev/null
+
+
+
+    #clear
+
     # echo "Filter: [$filter_mode] | Image $((current + 1)) of $total: ${current_files[$current]}"\n
     # echo "IMPORTANT: If continuing from a previous labelling session, press '4' (iterate only unlabelled images) to avoid relabelling previous work"
     # echo "Orange = edema ; White = enhancing tumour ; Red = Non-enhancing tumour AND necrosis"\n
@@ -322,9 +380,19 @@ show_image() {
     line_width=1.5
     color="red"
 
-    subdir="$brats_dir/${current_files[$current]}"
+    local fname="$1"
+    local subdir="$2"
+    local output_img="$3"
+    local show_crosshairs="$4"
+
+    #echo "show_crosshairs "$show_crosshairs""
     prepare_subject_images "$subdir"
-    fname=$(basename "$subdir")
+
+
+    # subdir="$brats_dir/${current_files[$current]}"
+    # prepare_subject_images "$subdir"
+    # fname=$(basename "$subdir")
+    # output_img="${FINAL_MONTAGE_DIR}/${fname}_finalmontage.png"
 
     # Get voxel coordinates of label
     read z_vox y_vox x_vox _ _ _ <<< "$(mincstats -quiet -CoM "$tmplabel")"
@@ -337,7 +405,6 @@ show_image() {
 
     contrasts=("$tmpt1" "$tmpt1ce" "$tmpt2" "$tmpflair")
     
-    # Pre-create all temp file paths (avoids mktemp overhead)
     temp_images=()
     
     # Determine number of parallel jobs based on OS
@@ -466,14 +533,14 @@ show_image() {
         fi
     done
 
-    tmpimg="$tmpdir/"$fname"_final_montage.png"
+    #tmpimg="$tmpdir/"$fname"_final_montage.png"
     
 
-    montage "${temp_images[@]}"  -tile 5x3 -geometry +2+2 "$tmpimg" 2>/dev/null
+    montage "${temp_images[@]}"  -tile 5x3 -geometry +2+2 "$output_img"
     
     #Add Row/ Column labels for clarity:
-    img_width=$(identify -format "%w" "$tmpimg")
-    img_height=$(identify -format "%h" "$tmpimg")
+    img_width=$(identify -format "%w" "$output_img")
+    img_height=$(identify -format "%h" "$output_img")
 
     # Calculate positions (in pixels from top)
     pos_slice_1=$((img_height * 4 / 5))      # 80% down (top row)
@@ -490,7 +557,7 @@ show_image() {
     # Add header space at top
     header_height=40
     
-    convert "$tmpimg" -gravity NorthWest -splice 100x${header_height} \
+    convert "$output_img" -gravity NorthWest -splice 100x${header_height} \
         -font Courier -pointsize 25 -fill black \
         -gravity North -annotate +$((pos_col_1 - img_width/2))+10 "T1" \
         -annotate +$((pos_col_2 - img_width/2))+10 "T1CE" \
@@ -501,9 +568,9 @@ show_image() {
         -annotate +10+$((pos_slice_1 + header_height)) "Slice $slice_1" \
         -annotate +10+$((pos_slice_index + header_height)) "Slice $slice_index" \
         -annotate +10+$((pos_slice_3 + header_height)) "Slice $slice_3" \
-        "$tmpimg" 2>/dev/null
+        "$output_img" 
 
-    open "$tmpimg"
+   #Save "$output_img"
     
     # Cleanup
     rm -f "$tmpflair" "$tmpt1" "$tmpt1ce" "$tmpt2" "$tmplabel"
@@ -534,6 +601,25 @@ update_status() {
 }
 
 
+#show_image
+if ! find "$montage_dir" -maxdepth 1 -type f -name '*_finalmontage.png' -print -quit | grep -q .; then
+    generate_all_montages "$montage_dir" "true"
+else
+    echo "Montages with crosshairs already exist in $montage_dir — skipping generation."
+fi
+
+# Generate without crosshairs
+if ! find "$nocrosshairs_montage_dir" -maxdepth 1 -type f -name '*_finalmontage.png' -print -quit | grep -q .; then
+    generate_all_montages "$nocrosshairs_montage_dir" "false"
+else
+    echo "Montages without crosshairs already exist in $nocrosshairs_montage_dir — skipping generation."
+fi
+
+FINAL_MONTAGE_DIR="$montage_dir"
+# choose which final dir to use for interactive viewing (example: use crosshair set)
+
+
+
 show_image
 
 #Read keyboard input
@@ -560,9 +646,11 @@ while true; do
         # Toggle crosshairs
         if [[ "$show_crosshairs" == true ]]; then
             show_crosshairs=false
+            FINAL_MONTAGE_DIR="$nocrosshairs_montage_dir"
             echo "Crosshairs: OFF"
         else
             show_crosshairs=true
+            FINAL_MONTAGE_DIR="$montage_dir"
             echo "Crosshairs: ON"
         fi
         #sleep 0.3
@@ -582,8 +670,20 @@ while true; do
         show_image
     elif [[ $input == 'b' ]]; then
         # Mark as bad
-        update_status "${files[$current]}" "bad"
+        update_status "${current_files[$current]}" "bad"
         echo "Marked as BAD"
+        #sleep 0.2
+        if [[ "$filter_mode" != "all" ]]; then
+            refresh_files
+        else
+            ((current++))
+            [[ $current -ge $total ]] && current=$((total - 1))
+        fi 
+        show_image
+    elif [[ $input == 'o' ]]; then
+        # Mark as bad
+        update_status "${current_files[$current]}" "okay"
+        echo "Marked as OKAY"
         #sleep 0.2
         if [[ "$filter_mode" != "all" ]]; then
             refresh_files
@@ -624,6 +724,25 @@ while true; do
         filter_mode="unspecified"
         refresh_files
         show_image
+
+    elif [[ $input == '5' ]]; then
+        echo "Filter: OKAY images only"
+        filter_mode="okay"
+        refresh_files
+        show_image
+    
+    
+    elif [[ $input == 'p' ]]; then
+        # Toggle multi-window mode
+        if [[ $MULTI_WINDOW_MODE == false ]]; then
+            MULTI_WINDOW_MODE=true
+            echo "Multi-window mode enabled - images will stack"
+        else
+            MULTI_WINDOW_MODE=false
+            echo "Multi-window mode disabled - only one image at a time"
+            # Close all windows when switching back to single-window mode
+            eval "$VIEWER_CLOSE" 2>/dev/null
+        fi
 
     elif [[ $input == 'q' ]]; then
         # kill $display_pid 2>/dev/null
