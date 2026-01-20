@@ -65,6 +65,8 @@ cd BraTS_Evaluation
 ./BraTS2021_QualityControl.sh BraTS2021
 ```
 
+#### Other Versions:
+
 ```bash
 cd BraTS_Evaluation
 ./BraTS2021_QualityControl.sh <dataset name> <./path/to/BraTS/directory>
@@ -74,25 +76,6 @@ This will generate the montage images (takes ~10 minutes on first run) for the n
 ```bash
 cd BraTS_Evaluation
 ./BraTS2021_QualityControl.sh <dataset name>
-```
-
----
-
-### Example Terminal Commands with BraTS2021
-
-For example, BraTS2021 can be run the first time as:
-
-```bash
-cd BraTS_Evaluation
-./BraTS2021_QualityControl.sh BraTS2021 ./path/to/BraTS2021_Training_Data
-```
-This will create the montage files for faster processing and will use/create the CSV file `BraTS2021_Evaluation.csv` which will store QC evaluations and display the first image.
-
-Then on subsequent (runs), just run:
-
-```bash
-cd BraTS_Evaluation
-./BraTS2021_QualityControl.sh BraTS2021
 ```
 
 Note: Other versions have not been tested as thoroughly as BraTS2021 and may not work as expected (due to different file structures). Please [Contact](#contact) me for more support.
