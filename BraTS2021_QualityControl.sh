@@ -77,7 +77,7 @@ CSV_TRACKING="${brats_name}_Evaluation.csv"
 if [ ! -f "$CSV_TRACKING" ]; then
     #mkdir -p "$CSV_TRACKING"
     #Initial state= All samples have "unspecified" quality status (haven't been validated as good or bad samples yet)
-    (echo "File,Status,Points1,Points2,Points3"; find $brats_dir/ -mindepth 1 -maxdepth 1 -type d | xargs -n1 basename | awk '{print $0",unspecified"}') >> "$CSV_TRACKING"
+    (echo "File,Status,Points1,Points2,Points3"; find $brats_dir/ -mindepth 2 -maxdepth 2 -type d | xargs -I {} sh -c 'echo $(basename $(dirname {}))/$(basename {})' | awk '{print $0",unspecified"}') >> "$CSV_TRACKING"
 
 fi
 
@@ -159,8 +159,9 @@ undo_last() {
 
 prepare_subject_images() {
     local subdir="$1"
+    local session="$2"
     local fname
-    fname=$(basename "$subdir")
+    fname="${session/\//_}"
 
     # persistent tmp dir (RAM-based is fastest)
     #tmpdir="/tmp/minc_fast_${fname}"
@@ -172,11 +173,11 @@ prepare_subject_images() {
     fi
     mkdir -p "$tmpdir"
 
-    local t1base=${subdir}/${fname}_t1
-    local t1cebase=${subdir}/${fname}_t1ce
-    local flairbase=${subdir}/${fname}_flair
-    local t2base=${subdir}/${fname}_t2
-    local labelbase=${subdir}/${fname}_seg
+    local t1base=${subdir}/anat/${fname}_T1w
+    local t1cebase=${subdir}/anat/${fname}_ce-gadolinium_T1w
+    local flairbase=${subdir}/anat/${fname}_FLAIR
+    local t2base=${subdir}/anat/${fname}_T2w
+    local labelbase=${subdir}/anat/${fname}_seg-brats25-ecnu_dseg
 
     convert_if_needed() {
         local base=$1 out=$2
@@ -284,7 +285,9 @@ show_image() {
     echo "═══════════════════════════════════════════════════════════════════════════════"
 
     echo " "$FINAL_MONTAGE_DIR""
-    local fname="${current_files[$current]}"
+    local session="${current_files[$current]}"
+    local fname
+    fname="${session/\//_}"
     local montage_path="${FINAL_MONTAGE_DIR}/${fname}_finalmontage.png"
 
     if [[ ! -f "$montage_path" ]]; then
@@ -343,8 +346,10 @@ generate_all_montages() {
     local FINAL_MONTAGE_DIR="$1"
     local show_crosshairs="$2"
 
-    for fname in "${files[@]}"; do
-        subdir="$brats_dir/$fname"
+    for session in "${files[@]}"; do
+        subdir="$brats_dir/$session"
+        local fname
+        fname="${session/\//_}"
         output_img="${FINAL_MONTAGE_DIR}/${fname}_finalmontage.png"
 
         if [[ -f "$output_img" ]]; then
@@ -355,7 +360,7 @@ generate_all_montages() {
         #echo "Generating montage for $fname ..."
         #prepare_subject_images "$subdir"
 
-        generate_single_montage "$fname" "$subdir" "$output_img" "$show_crosshairs"
+        generate_single_montage "$session" "$subdir" "$output_img" "$show_crosshairs"
     done
 
     echo " All montages generated in: $FINAL_MONTAGE_DIR"
@@ -380,13 +385,13 @@ generate_single_montage() {
     line_width=1.5
     color="red"
 
-    local fname="$1"
+    local session="$1"
     local subdir="$2"
     local output_img="$3"
     local show_crosshairs="$4"
 
     #echo "show_crosshairs "$show_crosshairs""
-    prepare_subject_images "$subdir"
+    prepare_subject_images "$subdir" "$session"
 
 
     # subdir="$brats_dir/${current_files[$current]}"
@@ -432,7 +437,7 @@ generate_single_montage() {
             mincpik --clobber --lookup "-hotmetal" --slice "$slice" "$tmplabel" "$temp_label" 2>/dev/null
             
             points_str=$(python3 find_boundaries.py "$temp_label" 3)
-            update_csv_value "$CSV_TRACKING" "$fname" "$colNum" "$points_str"
+            update_csv_value "$CSV_TRACKING" "$session" "$colNum" "$points_str"
             
             rm "$temp_label"
         fi
